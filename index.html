@@ -44,6 +44,9 @@
   .legend span+span i { background:#789180; }
   .note { margin:auto 0 0; padding-top:14px; }
   .return { margin:10px 0 0; }
+  .send { min-height:48px; margin-top:16px; border:0; border-radius:11px; padding:10px 14px; background:var(--accent); color:var(--ink); font:700 15px system-ui,sans-serif; cursor:pointer; }
+  .send:disabled { opacity:.56; cursor:default; }
+  .send:focus-visible { outline:2px solid white; outline-offset:3px; }
   @media(max-width:720px) {
     main { padding:24px 14px max(24px,env(safe-area-inset-bottom)); }
     header { margin-bottom:18px; }
@@ -100,6 +103,7 @@
       <div class="bar" aria-hidden="true"><span id="principal-share"></span></div>
       <div class="legend" aria-hidden="true"><span><i></i>Кредит</span><span><i></i>Проценты</span></div>
       <p class="note">Примерный расчёт аннуитетного платежа. Страховка и комиссии не учитываются.</p>
+      <button class="send" id="send-result" type="button" hidden disabled>Отправить расчёт в бот</button>
       <p class="return" id="return" hidden>Чтобы оставить заявку, закройте калькулятор и нажмите «Продолжить анкету» в чате.</p>
     </section>
   </div>
@@ -124,16 +128,22 @@
   const fields = ['price', 'deposit', 'years', 'rate'];
   const inputs = Object.fromEntries(fields.map((field) => [field, byId(field)]));
   const sliders = Object.fromEntries(fields.map((field) => [field, byId(field + '-slider')]));
+  const sendResult = byId('send-result');
+  let questionnaire = '';
+  let resultPayload = '';
+
   function applyMaxContext() {
     const app = window.WebApp;
     if (!app?.initData) return;
-    const start = /^down_(\d{1,12})$/.exec(app.initDataUnsafe?.start_param ?? '');
+    const start = /^down_(\d{1,12})(?:_([0-9a-f]{8}))?$/.exec(app.initDataUnsafe?.start_param ?? '');
     if (start) {
       const deposit = Number(start[1]);
       inputs.deposit.value = formatter.format(deposit);
       if (deposit >= readMoney(inputs.price.value)) inputs.price.value = '';
     }
-    byId('return').hidden = false;
+    questionnaire = start?.[2] ?? '';
+    sendResult.hidden = !questionnaire || typeof app.openMaxLink !== 'function';
+    byId('return').hidden = !sendResult.hidden;
     app.ready?.();
     render();
   }
@@ -164,6 +174,10 @@
     const payment = message ? NaN : monthlyPayment(principal, rate, years);
     const total = payment * years * 12;
     const valid = Number.isFinite(total);
+    resultPayload = valid && questionnaire
+      ? ['calc', questionnaire, price, deposit, years, Math.round(rate * 1000)].join('_')
+      : '';
+    sendResult.disabled = !resultPayload;
     byId('status').textContent = message || 'При выбранной ставке и сроке';
     byId('principal').textContent = amountsValid ? rubles(principal) : '—';
     byId('payment').textContent = valid ? rubles(payment) : '—';
@@ -190,6 +204,9 @@
       if (Number.isFinite(value)) inputs[field].value = formatter.format(value);
     });
   }
+  sendResult.addEventListener('click', () => {
+    if (resultPayload) window.WebApp.openMaxLink('https://max.ru/id260808618176_bot?start=' + resultPayload);
+  });
   render();
   document.addEventListener('DOMContentLoaded', applyMaxContext);
 </script>

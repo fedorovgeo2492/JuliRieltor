@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Ипотечный калькулятор · Юлия Хачатурян</title>
+<style>
+  :root { --paper:#f3f3ec; --card:#fffefa; --ink:#1a352c; --muted:#506359; --line:#dce2d7; --green:#183e31; --accent:#d9eaab; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.45 system-ui,-apple-system,sans-serif; }
+  main { max-width:1080px; margin:auto; padding:48px 32px; }
+  header { margin-bottom:30px; }
+  .brand { display:flex; align-items:center; gap:10px; margin:0 0 16px; font-size:14px; font-weight:650; }
+  .mark { display:grid; place-items:center; width:32px; height:32px; border-radius:50%; background:var(--green); color:var(--accent); font-family:Georgia,serif; font-size:18px; }
+  h1 { font:500 clamp(36px,6vw,64px)/1.02 Georgia,serif; letter-spacing:-.05em; margin:0 0 12px; }
+  header>p:last-child { margin:0; color:var(--muted); }
+  .layout { display:grid; grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr); gap:18px; align-items:stretch; }
+  .controls, .result { border-radius:24px; padding:26px; }
+  .controls { background:var(--card); border:1px solid var(--line); }
+  .field+.field { margin-top:20px; }
+  .field-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  label { font-weight:650; }
+  .input { display:flex; align-items:center; gap:6px; width:148px; min-height:46px; flex-shrink:0; border:1px solid var(--line); border-radius:10px; background:#f7f8f2; padding:0 10px; }
+  .input:focus-within { outline:2px solid #456948; outline-offset:2px; }
+  .input input { width:100%; min-width:0; padding:0; border:0; background:transparent; text-align:right; outline:0; color:var(--ink); font:600 17px system-ui,sans-serif; font-variant-numeric:tabular-nums; }
+  .unit, .bounds { font-size:12px; color:var(--muted); white-space:nowrap; }
+  input[type=range] { display:block; width:100%; accent-color:#40664a; margin:8px 0 0; height:28px; cursor:pointer; }
+  input[type=range]:focus-visible { outline:2px solid #456948; outline-offset:2px; border-radius:4px; }
+  .bounds { display:flex; justify-content:space-between; gap:8px; }
+  .result { position:relative; display:flex; flex-direction:column; background:var(--green); color:#f6faef; }
+  .result h2 { font:600 15px system-ui,sans-serif; margin:0; }
+  .payment { display:block; margin:8px 0 8px; color:var(--accent); font-size:clamp(38px,5vw,59px); font-weight:650; line-height:1.08; letter-spacing:-.055em; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+  .status, .note, .return { color:#e0e9db; font-size:13px; }
+  .status { min-height:38px; margin:0 0 14px; }
+  dl { margin:0; }
+  dl>div { border-top:1px solid #557264; display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:12px 0; }
+  dt { color:#e0e9db; font-size:14px; }
+  dd { margin:0; text-align:right; font-weight:650; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+  .bar { height:8px; border-radius:10px; overflow:hidden; background:#789180; margin:9px 0 4px; }
+  .bar>span { width:0; height:100%; display:block; border-radius:10px; background:var(--accent); }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; color:#e0e9db; font-size:12px; margin:5px 0 18px; }
+  .legend i { display:inline-block; width:.65em; height:.65em; margin-right:5px; border-radius:50%; background:var(--accent); }
+  .legend span+span i { background:#789180; }
+  .note { margin:auto 0 0; padding-top:14px; }
+  .return { margin:10px 0 0; }
+  @media(max-width:720px) {
+    main { padding:24px 14px max(24px,env(safe-area-inset-bottom)); }
+    header { margin-bottom:18px; }
+    .brand { margin-bottom:12px; }
+    .layout { grid-template-columns:1fr; gap:12px; }
+    .controls, .result { border-radius:18px; padding:18px; }
+    .field+.field { margin-top:13px; }
+    .status { min-height:auto; }
+    .input { width:130px; }
+  }
+  @media(max-width:350px) { .input { width:115px; } .controls { padding:14px; } .field-head { gap:8px; } }
+</style>
+<script defer src="https://st.max.ru/js/max-web-app.js"></script>
+</head>
+<body>
+<main>
+  <header>
+    <p class="brand"><span class="mark" aria-hidden="true">Ю</span> Юлия Хачатурян</p>
+    <h1>Ипотечный калькулятор</h1>
+    <p>Рассчитайте ежемесячный платёж по своим условиям.</p>
+  </header>
+  <div class="layout">
+    <section class="controls" aria-label="Условия ипотеки">
+      <div class="field">
+        <div class="field-head"><label for="price">Стоимость недвижимости</label><div class="input"><input id="price" inputmode="numeric" value="8 000 000" maxlength="16"><span class="unit" aria-hidden="true">₽</span></div></div>
+        <input id="price-slider" type="range" min="0" max="40000000" step="100000" value="8000000" aria-label="Изменить стоимость недвижимости в рублях">
+        <div class="bounds"><span>0 ₽</span><span>40 млн ₽</span></div>
+      </div>
+      <div class="field">
+        <div class="field-head"><label for="deposit">Первоначальный взнос</label><div class="input"><input id="deposit" inputmode="numeric" value="1 600 000" maxlength="16"><span class="unit" aria-hidden="true">₽</span></div></div>
+        <input id="deposit-slider" type="range" min="0" max="100" step="1" value="20" aria-label="Изменить первоначальный взнос в процентах">
+        <div class="bounds"><span>0%</span><span id="deposit-share">20% от стоимости</span><span>100%</span></div>
+      </div>
+      <div class="field">
+        <div class="field-head"><label for="years">Срок кредита</label><div class="input"><input id="years" inputmode="numeric" value="20" maxlength="2" aria-label="Срок кредита, лет"><span class="unit" aria-hidden="true">лет</span></div></div>
+        <input id="years-slider" type="range" min="1" max="50" step="1" value="20" aria-label="Изменить срок кредита в годах">
+        <div class="bounds"><span>1 год</span><span>50 лет</span></div>
+      </div>
+      <div class="field">
+        <div class="field-head"><label for="rate">Годовая ставка</label><div class="input"><input id="rate" inputmode="decimal" placeholder="Введите" maxlength="7" aria-label="Годовая ставка, процентов"><span class="unit" aria-hidden="true">%</span></div></div>
+        <input id="rate-slider" type="range" min="0" max="40" step="0.1" value="0" aria-label="Изменить годовую ставку в процентах">
+        <div class="bounds"><span>0%</span><span>40%</span></div>
+      </div>
+    </section>
+    <section class="result" aria-labelledby="result-title">
+      <h2 id="result-title">Ежемесячный платёж</h2>
+      <output id="payment" class="payment" for="price deposit years rate">—</output>
+      <p id="status" class="status" role="status">Укажите ставку, чтобы увидеть расчёт.</p>
+      <dl>
+        <div><dt>Сумма кредита</dt><dd id="principal">—</dd></div>
+        <div><dt>Проценты за весь срок</dt><dd id="interest">—</dd></div>
+        <div><dt>Всего банку</dt><dd id="total">—</dd></div>
+      </dl>
+      <div class="bar" aria-hidden="true"><span id="principal-share"></span></div>
+      <div class="legend" aria-hidden="true"><span><i></i>Кредит</span><span><i></i>Проценты</span></div>
+      <p class="note">Примерный расчёт аннуитетного платежа. Страховка и комиссии не учитываются.</p>
+      <p class="return" id="return" hidden>Чтобы оставить заявку, закройте калькулятор и нажмите «Продолжить анкету» в чате.</p>
+    </section>
+  </div>
+</main>
+<script>
+  const byId = (id) => document.getElementById(id);
+  const formatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
+  const rubles = (amount) => formatter.format(amount) + ' ₽';
+
+  function readMoney(text) {
+    const digits = text.replace(/\s/g, '');
+    return /^\d{1,12}$/.test(digits) ? Number(digits) : NaN;
+  }
+
+  function monthlyPayment(principal, annualRate, years) {
+    const months = years * 12;
+    const monthlyRate = annualRate / 1200;
+    if (monthlyRate === 0) return principal / months;
+    return principal * monthlyRate / -Math.expm1(-months * Math.log1p(monthlyRate));
+  }
+
+  const fields = ['price', 'deposit', 'years', 'rate'];
+  const inputs = Object.fromEntries(fields.map((field) => [field, byId(field)]));
+  const sliders = Object.fromEntries(fields.map((field) => [field, byId(field + '-slider')]));
+  function applyMaxContext() {
+    const app = window.WebApp;
+    if (!app?.initData) return;
+    const start = /^down_(\d{1,12})$/.exec(app.initDataUnsafe?.start_param ?? '');
+    if (start) {
+      const deposit = Number(start[1]);
+      inputs.deposit.value = formatter.format(deposit);
+      if (deposit >= readMoney(inputs.price.value)) inputs.price.value = '';
+    }
+    byId('return').hidden = false;
+    app.ready?.();
+    render();
+  }
+
+  function render() {
+    const price = readMoney(inputs.price.value);
+    const deposit = readMoney(inputs.deposit.value);
+    const years = /^\d{1,2}$/.test(inputs.years.value) ? Number(inputs.years.value) : NaN;
+    const rateText = inputs.rate.value.trim().replace(',', '.');
+    const rate = /^\d{1,3}(\.\d{1,3})?$/.test(rateText) ? Number(rateText) : NaN;
+    const amountsValid = price > 0 && deposit >= 0 && deposit < price;
+    const share = price > 0 && deposit >= 0 ? 100 * deposit / price : NaN;
+    byId('deposit-share').textContent = Number.isFinite(share) ? formatter.format(share) + '% от стоимости' : 'Доля от стоимости';
+    const initialValues = { price, deposit: share, years, rate };
+    for (const field of fields) {
+      if (Number.isFinite(initialValues[field])) sliders[field].value = initialValues[field];
+    }
+
+    let message = '';
+    if (!(price > 0)) message = 'Введите стоимость недвижимости в рублях.';
+    else if (!(deposit >= 0)) message = 'Введите первоначальный взнос в рублях.';
+    else if (deposit >= price) message = 'Взнос должен быть меньше стоимости недвижимости.';
+    else if (!(years >= 1 && years <= 50)) message = 'Укажите срок от 1 до 50 лет.';
+    else if (!rateText) message = 'Укажите ставку, чтобы увидеть расчёт.';
+    else if (!(rate >= 0 && rate <= 100)) message = 'Укажите годовую ставку от 0 до 100%.';
+
+    const principal = price - deposit;
+    const payment = message ? NaN : monthlyPayment(principal, rate, years);
+    const total = payment * years * 12;
+    const valid = Number.isFinite(total);
+    byId('status').textContent = message || 'При выбранной ставке и сроке';
+    byId('principal').textContent = amountsValid ? rubles(principal) : '—';
+    byId('payment').textContent = valid ? rubles(payment) : '—';
+    byId('interest').textContent = valid ? rubles(Math.max(0, total - principal)) : '—';
+    byId('total').textContent = valid ? rubles(total) : '—';
+    byId('principal-share').style.width = valid ? (100 * principal / total) + '%' : '0%';
+  }
+
+  for (const field of fields) {
+    inputs[field].addEventListener('input', render);
+    sliders[field].addEventListener('input', () => {
+      const selected = Number(sliders[field].value);
+      if (field === 'deposit') {
+        const price = readMoney(inputs.price.value);
+        if (price > 0) inputs.deposit.value = formatter.format(Math.round(price * selected / 100));
+      } else if (field === 'price') inputs.price.value = formatter.format(selected);
+      else inputs[field].value = String(selected).replace('.', ',');
+      render();
+    });
+  }
+  for (const field of ['price', 'deposit']) {
+    inputs[field].addEventListener('blur', () => {
+      const value = readMoney(inputs[field].value);
+      if (Number.isFinite(value)) inputs[field].value = formatter.format(value);
+    });
+  }
+  render();
+  document.addEventListener('DOMContentLoaded', applyMaxContext);
+</script>
+</body>
+</html>

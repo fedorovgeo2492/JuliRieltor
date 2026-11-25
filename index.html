@@ -8,6 +8,7 @@
 <style>
   :root { --paper:#f3f3ec; --card:#fffefa; --ink:#1a352c; --muted:#506359; --line:#dce2d7; --green:#183e31; --accent:#d9eaab; }
   * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
   body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.45 system-ui,-apple-system,sans-serif; }
   main { max-width:1080px; margin:auto; padding:48px 32px; }
   header { margin-bottom:30px; }
@@ -19,6 +20,16 @@
   .controls, .result { border-radius:24px; padding:26px; }
   .controls { background:var(--card); border:1px solid var(--line); }
   .field+.field { margin-top:20px; }
+  .rate-settings { margin:22px 0 0; padding:18px 0 0; border:0; border-top:1px solid var(--line); }
+  .rate-settings h2 { margin:0 0 10px; font-size:17px; }
+  .rate-options { display:flex; flex-wrap:wrap; gap:8px; }
+  .rate-panel { margin-top:12px; }
+  .rate-options label { position:relative; flex:1 1 auto; }
+  .rate-options input { position:absolute; width:1px; height:1px; opacity:0; }
+  .rate-options label span { display:flex; align-items:center; justify-content:center; min-height:44px; height:100%; padding:8px 11px; border:1px solid var(--line); border-radius:10px; text-align:center; color:var(--ink); background:#f7f8f2; font-size:14px; cursor:pointer; }
+  .rate-options input:checked+span { border-color:var(--green); background:var(--green); color:white; }
+  .rate-options input:focus-visible+span { outline:2px solid #456948; outline-offset:2px; }
+  .rate-options strong { margin-left:5px; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .field-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
   label { font-weight:650; }
   .input { display:flex; align-items:center; gap:6px; width:148px; min-height:46px; flex-shrink:0; border:1px solid var(--line); border-radius:10px; background:#f7f8f2; padding:0 10px; }
@@ -37,11 +48,6 @@
   dl>div { border-top:1px solid #557264; display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:12px 0; }
   dt { color:#e0e9db; font-size:14px; }
   dd { margin:0; text-align:right; font-weight:650; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
-  .bar { height:8px; border-radius:10px; overflow:hidden; background:#789180; margin:9px 0 4px; }
-  .bar>span { width:0; height:100%; display:block; border-radius:10px; background:var(--accent); }
-  .legend { display:flex; gap:14px; flex-wrap:wrap; color:#e0e9db; font-size:12px; margin:5px 0 18px; }
-  .legend i { display:inline-block; width:.65em; height:.65em; margin-right:5px; border-radius:50%; background:var(--accent); }
-  .legend span+span i { background:#789180; }
   .note { margin:auto 0 0; padding-top:14px; }
   .return { margin:10px 0 0; }
   .send { min-height:48px; margin-top:16px; border:0; border-radius:11px; padding:10px 14px; background:var(--accent); color:var(--ink); font:700 15px system-ui,sans-serif; cursor:pointer; }
@@ -85,23 +91,46 @@
         <input id="years-slider" type="range" min="1" max="50" step="1" value="20" aria-label="Изменить срок кредита в годах">
         <div class="bounds"><span>1 год</span><span>50 лет</span></div>
       </div>
-      <div class="field">
-        <div class="field-head"><label for="rate">Годовая ставка</label><div class="input"><input id="rate" inputmode="decimal" placeholder="Введите" maxlength="7" aria-label="Годовая ставка, процентов"><span class="unit" aria-hidden="true">%</span></div></div>
-        <input id="rate-slider" type="range" min="0" max="40" step="0.1" value="0" aria-label="Изменить годовую ставку в процентах">
-        <div class="bounds"><span>0%</span><span>40%</span></div>
-      </div>
+      <section class="rate-settings" aria-labelledby="rate-title">
+        <h2 id="rate-title">Программа ипотеки</h2>
+        <div class="rate-options" role="group" aria-label="Вид ипотеки">
+          <label><input type="radio" name="mortgage-plan" value="family" checked><span>Семейная</span></label>
+          <label><input type="radio" name="mortgage-plan" value="standard"><span>Стандартная</span></label>
+          <label><input type="radio" name="mortgage-plan" value="custom"><span>Своя ставка</span></label>
+        </div>
+        <div class="rate-options rate-panel" id="family-rates" role="group" aria-label="Ставка по количеству детей">
+          <label><input type="radio" name="rate-preset" value="10"><span>1 ребёнок <strong>10%</strong></span></label>
+          <label><input type="radio" name="rate-preset" value="8"><span>2 ребёнка <strong>8%</strong></span></label>
+          <label><input type="radio" name="rate-preset" value="6"><span>3 ребёнка <strong>6%</strong></span></label>
+          <label><input type="radio" name="rate-preset" value="4"><span>4 ребёнка <strong>4%</strong></span></label>
+          <label><input type="radio" name="rate-preset" value="2"><span>5 и более детей <strong>2%</strong></span></label>
+        </div>
+        <div class="rate-panel" id="standard-rates" hidden>
+          <div class="rate-options" role="group" aria-label="Вариант стандартной ипотеки">
+            <label><input type="radio" name="standard-variant" value="subsidized"><span>Субсидированная</span></label>
+            <label><input type="radio" name="standard-variant" value="regular"><span>Обычная <strong>19,5%</strong></span></label>
+          </div>
+          <div class="rate-options rate-panel" id="subsidized-rates" role="group" aria-label="Субсидированная ставка" hidden>
+            <label><input type="radio" name="rate-preset" value="14.5"><span>14,5%</span></label>
+            <label><input type="radio" name="rate-preset" value="13.9"><span>13,9%</span></label>
+            <label><input type="radio" name="rate-preset" value="12.65"><span>12,65%</span></label>
+            <label><input type="radio" name="rate-preset" value="10.5"><span>10,5%</span></label>
+          </div>
+        </div>
+        <div class="rate-panel" id="custom-rate" hidden>
+          <div class="field-head"><label for="rate">Годовая ставка</label><div class="input"><input id="rate" inputmode="decimal" placeholder="Введите" maxlength="7" aria-label="Годовая ставка, процентов"><span class="unit" aria-hidden="true">%</span></div></div>
+          <input id="rate-slider" type="range" min="0" max="40" step="0.1" value="0" aria-label="Изменить годовую ставку в процентах">
+          <div class="bounds"><span>0%</span><span>40%</span></div>
+        </div>
+      </section>
     </section>
     <section class="result" aria-labelledby="result-title">
       <h2 id="result-title">Ежемесячный платёж</h2>
       <output id="payment" class="payment" for="price deposit years rate">—</output>
-      <p id="status" class="status" role="status">Укажите ставку, чтобы увидеть расчёт.</p>
+      <p id="status" class="status" role="status">Выберите ставку, чтобы увидеть расчёт.</p>
       <dl>
         <div><dt>Сумма кредита</dt><dd id="principal">—</dd></div>
-        <div><dt>Проценты за весь срок</dt><dd id="interest">—</dd></div>
-        <div><dt>Всего банку</dt><dd id="total">—</dd></div>
       </dl>
-      <div class="bar" aria-hidden="true"><span id="principal-share"></span></div>
-      <div class="legend" aria-hidden="true"><span><i></i>Кредит</span><span><i></i>Проценты</span></div>
       <p class="note">Примерный расчёт аннуитетного платежа. Страховка и комиссии не учитываются.</p>
       <button class="send" id="send-result" type="button" hidden disabled>Отправить расчёт в бот</button>
       <p class="return" id="return" hidden>Чтобы оставить заявку, закройте калькулятор и нажмите «Продолжить анкету» в чате.</p>
@@ -129,6 +158,8 @@
   const inputs = Object.fromEntries(fields.map((field) => [field, byId(field)]));
   const sliders = Object.fromEntries(fields.map((field) => [field, byId(field + '-slider')]));
   const sendResult = byId('send-result');
+  const ratePresets = document.querySelectorAll('input[name="rate-preset"]');
+  const standardVariants = document.querySelectorAll('input[name="standard-variant"]');
   let questionnaire = '';
   let resultPayload = '';
 
@@ -167,13 +198,12 @@
     else if (!(deposit >= 0)) message = 'Введите первоначальный взнос в рублях.';
     else if (deposit >= price) message = 'Взнос должен быть меньше стоимости недвижимости.';
     else if (!(years >= 1 && years <= 50)) message = 'Укажите срок от 1 до 50 лет.';
-    else if (!rateText) message = 'Укажите ставку, чтобы увидеть расчёт.';
+    else if (!rateText) message = 'Выберите ставку, чтобы увидеть расчёт.';
     else if (!(rate >= 0 && rate <= 100)) message = 'Укажите годовую ставку от 0 до 100%.';
 
     const principal = price - deposit;
     const payment = message ? NaN : monthlyPayment(principal, rate, years);
-    const total = payment * years * 12;
-    const valid = Number.isFinite(total);
+    const valid = Number.isFinite(payment);
     resultPayload = valid && questionnaire
       ? ['calc', questionnaire, price, deposit, years, Math.round(rate * 1000)].join('_')
       : '';
@@ -181,9 +211,6 @@
     byId('status').textContent = message || 'При выбранной ставке и сроке';
     byId('principal').textContent = amountsValid ? rubles(principal) : '—';
     byId('payment').textContent = valid ? rubles(payment) : '—';
-    byId('interest').textContent = valid ? rubles(Math.max(0, total - principal)) : '—';
-    byId('total').textContent = valid ? rubles(total) : '—';
-    byId('principal-share').style.width = valid ? (100 * principal / total) + '%' : '0%';
   }
 
   for (const field of fields) {
@@ -204,6 +231,33 @@
       if (Number.isFinite(value)) inputs[field].value = formatter.format(value);
     });
   }
+  function selectRate(rate) {
+    inputs.rate.value = rate.replace('.', ',');
+    render();
+  }
+
+  for (const button of document.querySelectorAll('input[name="mortgage-plan"]')) {
+    button.addEventListener('change', () => {
+      byId('family-rates').hidden = button.value !== 'family';
+      byId('standard-rates').hidden = button.value !== 'standard';
+      byId('custom-rate').hidden = button.value !== 'custom';
+      byId('subsidized-rates').hidden = true;
+      for (const choice of [...ratePresets, ...standardVariants]) choice.checked = false;
+      selectRate('');
+    });
+  }
+  for (const button of standardVariants) {
+    button.addEventListener('change', () => {
+      const subsidized = button.value === 'subsidized';
+      byId('subsidized-rates').hidden = !subsidized;
+      for (const choice of ratePresets) choice.checked = false;
+      selectRate(subsidized ? '' : '19.5');
+    });
+  }
+  for (const button of ratePresets) {
+    button.addEventListener('change', () => selectRate(button.value));
+  }
+
   sendResult.addEventListener('click', () => {
     if (resultPayload) window.WebApp.openMaxLink('https://max.ru/id260808618176_bot?start=' + resultPayload);
   });

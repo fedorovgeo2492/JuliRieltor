@@ -88,8 +88,8 @@
       </div>
       <div class="field">
         <div class="field-head"><label for="years">Срок кредита</label><div class="input"><input id="years" inputmode="numeric" value="20" maxlength="2" aria-label="Срок кредита, лет"><span class="unit" aria-hidden="true">лет</span></div></div>
-        <input id="years-slider" type="range" min="1" max="50" step="1" value="20" aria-label="Изменить срок кредита в годах">
-        <div class="bounds"><span>1 год</span><span>50 лет</span></div>
+        <input id="years-slider" type="range" min="1" max="30" step="1" value="20" aria-label="Изменить срок кредита в годах">
+        <div class="bounds"><span>1 год</span><span>30 лет</span></div>
       </div>
       <section class="rate-settings" aria-labelledby="rate-title">
         <h2 id="rate-title">Программа ипотеки</h2>
@@ -157,6 +157,7 @@
   const fields = ['price', 'deposit', 'years', 'rate'];
   const inputs = Object.fromEntries(fields.map((field) => [field, byId(field)]));
   const sliders = Object.fromEntries(fields.map((field) => [field, byId(field + '-slider')]));
+  const maxYears = Number(sliders.years.max);
   const sendResult = byId('send-result');
   const ratePresets = document.querySelectorAll('input[name="rate-preset"]');
   const standardVariants = document.querySelectorAll('input[name="standard-variant"]');
@@ -197,7 +198,7 @@
     if (!(price > 0)) message = 'Введите стоимость недвижимости в рублях.';
     else if (!(deposit >= 0)) message = 'Введите первоначальный взнос в рублях.';
     else if (deposit >= price) message = 'Взнос должен быть меньше стоимости недвижимости.';
-    else if (!(years >= 1 && years <= 50)) message = 'Укажите срок от 1 до 50 лет.';
+    else if (!(years >= 1 && years <= maxYears)) message = `Укажите срок от 1 до ${maxYears} лет.`;
     else if (!rateText) message = 'Выберите ставку, чтобы увидеть расчёт.';
     else if (!(rate >= 0 && rate <= 100)) message = 'Укажите годовую ставку от 0 до 100%.';
 
